@@ -30,6 +30,18 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.SignInButton;
 
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -373,6 +385,7 @@ public class LoginActivity extends PlusBaseActivity implements LoaderCallbacks<C
 
         private final String mEmail;
         private final String mPassword;
+        private int          code;
 
         UserLoginTask(String email, String password)
         {
@@ -384,24 +397,32 @@ public class LoginActivity extends PlusBaseActivity implements LoaderCallbacks<C
         protected Boolean doInBackground(Void... params)
         {
             // TODO: attempt authentication against a network service.
+            // Create a new HttpClient and Post Header
+            HttpClient httpclient = new DefaultHttpClient();
+            HttpPost httppost = new HttpPost("http://tomcat8-wokesmeed.rhcloud.com");
 
-            try {
-                // Simulate network access.
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                return false;
+            try
+            {
+                // Add your data
+                List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
+                nameValuePairs.add(new BasicNameValuePair("email", mEmail));
+                nameValuePairs.add(new BasicNameValuePair("password", mPassword));
+                httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+
+                // Execute HTTP Post Request
+                HttpResponse response = httpclient.execute(httppost);
+                code = response.getStatusLine().getStatusCode();
+                System.out.println("Authentication " + code);
+
+            } catch (ClientProtocolException e) {
+                // TODO Auto-generated catch block
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
             }
 
-            for (String credential : DUMMY_CREDENTIALS) {
-                String[] pieces = credential.split(":");
-                if (pieces[0].equals(mEmail)) {
-                    // Account exists, return true if the password matches.
-                    return pieces[1].equals(mPassword);
-                }
-            }
 
             // TODO: register the new account here.
-            return true;
+            return null;
         }
 
         @Override
@@ -409,10 +430,13 @@ public class LoginActivity extends PlusBaseActivity implements LoaderCallbacks<C
         {
             mAuthTask = null;
             showProgress(false);
-
-            if (success) {
+            if (code == 200)
+            {
+                // Write Logged in Preferences
                 finish();
-            } else {
+            }
+            else
+            {
                 mPasswordView.setError(getString(R.string.error_incorrect_password));
                 mPasswordView.requestFocus();
             }
