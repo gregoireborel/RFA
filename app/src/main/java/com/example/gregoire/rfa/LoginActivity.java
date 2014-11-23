@@ -56,7 +56,6 @@ import java.util.List;
  */
 public class LoginActivity extends PlusBaseActivity implements LoaderCallbacks<Cursor>
 {
-
     /**
      * A dummy authentication store containing known user names and passwords.
      * TODO: remove after connecting to a real authentication system.
@@ -386,42 +385,24 @@ public class LoginActivity extends PlusBaseActivity implements LoaderCallbacks<C
         private final String mEmail;
         private final String mPassword;
         private int          code;
+        private WebService   m_webService;
 
         UserLoginTask(String email, String password)
         {
             mEmail = email;
             mPassword = password;
+            m_webService = new WebService("http://tomcat8-wokesmeed.rhcloud.com");
         }
 
         @Override
         protected Boolean doInBackground(Void... params)
         {
-            // TODO: attempt authentication against a network service.
-            // Create a new HttpClient and Post Header
-            HttpClient httpclient = new DefaultHttpClient();
-            HttpPost httppost = new HttpPost("http://tomcat8-wokesmeed.rhcloud.com");
-
-            try
-            {
-                // Add your data
-                List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
-                nameValuePairs.add(new BasicNameValuePair("email", mEmail));
-                nameValuePairs.add(new BasicNameValuePair("password", mPassword));
-                httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-
-                // Execute HTTP Post Request
-                HttpResponse response = httpclient.execute(httppost);
-                code = response.getStatusLine().getStatusCode();
-                System.out.println("Authentication " + code);
-
-            } catch (ClientProtocolException e) {
-                // TODO Auto-generated catch block
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
+            try {
+                if (this.m_webService.connectUser(mEmail, mPassword))
+                    return (true);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-
-
-            // TODO: register the new account here.
             return null;
         }
 

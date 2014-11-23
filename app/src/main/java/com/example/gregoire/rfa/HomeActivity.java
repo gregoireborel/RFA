@@ -22,8 +22,9 @@ import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
 
-public class HomeActivity extends Activity
-        implements NavigationDrawerFragment.NavigationDrawerCallbacks {
+public class HomeActivity extends Activity implements NavigationDrawerFragment.NavigationDrawerCallbacks
+{
+    private WebService  m_webService;
 
     /**
      * Fragment managing the behaviors, interactions and presentation of the navigation drawer.
@@ -40,6 +41,7 @@ public class HomeActivity extends Activity
     {
         super.onCreate(savedInstanceState);
 
+        this.m_webService = new WebService("http://tomcat8-wokesmeed.rhcloud.com");
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         boolean isLogged = prefs.getBoolean("isLogged", false);  //get value of last login
 
@@ -49,16 +51,21 @@ public class HomeActivity extends Activity
             startActivity(i);
             finish();
         }
-        setContentView(R.layout.activity_home);
+        else {
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putBoolean("isLogged", true);
+            editor.commit();
 
-        mNavigationDrawerFragment = (NavigationDrawerFragment)
-                getFragmentManager().findFragmentById(R.id.navigation_drawer);
-        mTitle = getTitle();
+            setContentView(R.layout.activity_home);
+            mNavigationDrawerFragment = (NavigationDrawerFragment)
+                    getFragmentManager().findFragmentById(R.id.navigation_drawer);
+            mTitle = getTitle();
 
-        // Set up the drawer.
-        mNavigationDrawerFragment.setUp(
-                R.id.navigation_drawer,
-                (DrawerLayout) findViewById(R.id.drawer_layout));
+            // Set up the drawer.
+            mNavigationDrawerFragment.setUp(
+                    R.id.navigation_drawer,
+                    (DrawerLayout) findViewById(R.id.drawer_layout));
+        }
     }
 
     @Override
