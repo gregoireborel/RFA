@@ -148,9 +148,9 @@ public class WebService
         nameValuePairs.add(new BasicNameValuePair("email", email));
         nameValuePairs.add(new BasicNameValuePair("password", pwd));
 		
-		try {
-			sendPostRequest(url, nameValuePairs);
-		} catch (Exception e) { throw new Exception(e.getMessage()); }
+		try {   sendPostRequest(url, nameValuePairs);   }
+        catch (Exception e) { throw new Exception(e.getMessage()); }
+
 		if (code == 200)
         	return true;
         else

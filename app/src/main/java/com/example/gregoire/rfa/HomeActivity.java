@@ -25,6 +25,7 @@ import android.widget.TextView;
 public class HomeActivity extends Activity implements NavigationDrawerFragment.NavigationDrawerCallbacks
 {
     private WebService  m_webService;
+    private SharedPreferences m_prefs;
 
     /**
      * Fragment managing the behaviors, interactions and presentation of the navigation drawer.
@@ -42,29 +43,42 @@ public class HomeActivity extends Activity implements NavigationDrawerFragment.N
         super.onCreate(savedInstanceState);
 
         this.m_webService = new WebService("http://tomcat8-wokesmeed.rhcloud.com");
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        boolean isLogged = prefs.getBoolean("isLogged", false);  //get value of last login
+        this.m_prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
+        setContentView(R.layout.activity_home);
+        mNavigationDrawerFragment = (NavigationDrawerFragment)
+                getFragmentManager().findFragmentById(R.id.navigation_drawer);
+        mTitle = getTitle();
+
+        // Set up the drawer.
+        mNavigationDrawerFragment.setUp(
+                R.id.navigation_drawer,
+                (DrawerLayout) findViewById(R.id.drawer_layout));
+
+        boolean isLogged = this.m_prefs.getBoolean("isLogged", false);  //get value of last login
         if (!isLogged)
         {
             Intent i = new Intent(this, LoginActivity.class);
-            startActivity(i);
-            finish();
+            startActivityForResult(i, 1);
         }
-        else {
-            SharedPreferences.Editor editor = prefs.edit();
-            editor.putBoolean("isLogged", true);
-            editor.commit();
+    }
 
-            setContentView(R.layout.activity_home);
-            mNavigationDrawerFragment = (NavigationDrawerFragment)
-                    getFragmentManager().findFragmentById(R.id.navigation_drawer);
-            mTitle = getTitle();
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data)
+    {
+        // Check which request we're responding to
+        if (requestCode == 1)
+        {
+            // Make sure the request was successful
+            if (resultCode == RESULT_OK)
+            {
+                SharedPreferences.Editor editor = this.m_prefs.edit();
+                editor.putBoolean("isLogged", true);
+                editor.commit();
 
-            // Set up the drawer.
-            mNavigationDrawerFragment.setUp(
-                    R.id.navigation_drawer,
-                    (DrawerLayout) findViewById(R.id.drawer_layout));
+                try {   System.out.println("Feeds : " + this.m_webService.getFeeds());  }
+                catch (Exception e) { e.printStackTrace();    }
+            }
         }
     }
 
@@ -118,9 +132,19 @@ public class HomeActivity extends Activity implements NavigationDrawerFragment.N
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-        if (id == R.id.action_settings) {
-            return true;
-        }
+        if (id == R.id.action_logout)
+        {
+            try {
+                this.m_webService.disconnectUser();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            SharedPreferences.Editor editor = this.m_prefs.edit();
+            editor.putBoolean("isLogged", false);
+            editor.commit();
+            Intent i = new Intent(this, LoginActivity.class);
+            startActivity(i);
+         }
         return super.onOptionsItemSelected(item);
     }
 
