@@ -73,12 +73,23 @@ public class LoginActivity extends PlusBaseActivity implements LoaderCallbacks<C
     private SignInButton mPlusSignInButton;
     private View mSignOutButtons;
     private View mLoginFormView;
+    private SharedPreferences m_prefs;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+
+        this.m_prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        boolean isLogged = this.m_prefs.getBoolean("isLogged", false);  //get value of last login
+        if (isLogged)
+        {
+            Intent i = new Intent(this, HomeActivity.class);
+            startActivity(i);
+            finish();
+        }
 
         // Find the Google+ sign in button.
         mPlusSignInButton = (SignInButton) findViewById(R.id.plus_sign_in_button);
@@ -197,7 +208,7 @@ public class LoginActivity extends PlusBaseActivity implements LoaderCallbacks<C
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
             showProgress(true);
-            mAuthTask = new UserLoginTask(email, password);
+            mAuthTask = new UserLoginTask(email, password, this);
             mAuthTask.execute((Void) null);
         }
     }
@@ -389,12 +400,14 @@ public class LoginActivity extends PlusBaseActivity implements LoaderCallbacks<C
         private final String mPassword;
         private int          code;
         private WebService   m_webService;
+        private Context      m_ctx;
 
-        UserLoginTask(String email, String password)
+        UserLoginTask(String email, String password, Context ctx)
         {
             mEmail = email;
             mPassword = password;
             m_webService = new WebService("http://tomcat8-wokesmeed.rhcloud.com");
+            m_ctx = ctx;
         }
 
         @Override
@@ -416,8 +429,10 @@ public class LoginActivity extends PlusBaseActivity implements LoaderCallbacks<C
             showProgress(false);
             if (success)
             {
-                Intent returnIntent = new Intent();
-                setResult(RESULT_OK, returnIntent);
+                Intent i = new Intent(m_ctx, HomeActivity.class);
+                i.putExtra("email", mEmailView.getText().toString());
+                i.putExtra("password", mPasswordView.getText().toString());
+                startActivity(i);
                 finish();
             }
             else

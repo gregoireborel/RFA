@@ -21,11 +21,14 @@ import android.support.v4.widget.DrawerLayout;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
+import com.google.android.gms.drive.metadata.StringMetadataField;
+
 
 public class HomeActivity extends Activity implements NavigationDrawerFragment.NavigationDrawerCallbacks
 {
     private WebService  m_webService;
     private SharedPreferences m_prefs;
+    private String  m_email, m_password;
 
     /**
      * Fragment managing the behaviors, interactions and presentation of the navigation drawer.
@@ -44,6 +47,24 @@ public class HomeActivity extends Activity implements NavigationDrawerFragment.N
 
         this.m_webService = new WebService("http://tomcat8-wokesmeed.rhcloud.com");
         this.m_prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences.Editor editor = this.m_prefs.edit();
+        editor.putBoolean("isLogged", true);
+
+        Bundle extras = getIntent().getExtras();
+        if (extras != null)
+        {
+            m_email = extras.getString("email");
+            editor.putString("email", m_email);
+            m_password = extras.getString("password");
+            editor.putString("password", m_password);
+        }
+        else
+        {
+            m_email = this.m_prefs.getString("email", "");
+            m_password = this.m_prefs.getString("password", "");
+        }
+        editor.commit();
+
 
         setContentView(R.layout.activity_home);
         mNavigationDrawerFragment = (NavigationDrawerFragment)
@@ -55,31 +76,19 @@ public class HomeActivity extends Activity implements NavigationDrawerFragment.N
                 R.id.navigation_drawer,
                 (DrawerLayout) findViewById(R.id.drawer_layout));
 
-        boolean isLogged = this.m_prefs.getBoolean("isLogged", false);  //get value of last login
-        if (!isLogged)
+        new Thread()
         {
-            Intent i = new Intent(this, LoginActivity.class);
-            startActivityForResult(i, 1);
-        }
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data)
-    {
-        // Check which request we're responding to
-        if (requestCode == 1)
-        {
-            // Make sure the request was successful
-            if (resultCode == RESULT_OK)
+            public void run()
             {
-                SharedPreferences.Editor editor = this.m_prefs.edit();
-                editor.putBoolean("isLogged", true);
-                editor.commit();
-
-                try {   System.out.println("Feeds : " + this.m_webService.getFeeds());  }
-                catch (Exception e) { e.printStackTrace();    }
+                try
+                {
+                    if (m_webService.connectUser(m_email, m_password))
+                    {
+                        System.out.println("Feeds : " + m_webService.getFeeds());
+                    }
+                } catch (Exception e)   {   e.printStackTrace();    }
             }
-        }
+        }.start();
     }
 
     @Override
@@ -134,16 +143,23 @@ public class HomeActivity extends Activity implements NavigationDrawerFragment.N
         int id = item.getItemId();
         if (id == R.id.action_logout)
         {
-            try {
-                this.m_webService.disconnectUser();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            new Thread()
+            {
+                public void run()
+                {
+                    try
+                    {
+                        m_webService.disconnectUser();
+                    } catch (Exception e)   {   e.printStackTrace();    }
+                }
+            }.start();
+
             SharedPreferences.Editor editor = this.m_prefs.edit();
             editor.putBoolean("isLogged", false);
             editor.commit();
             Intent i = new Intent(this, LoginActivity.class);
             startActivity(i);
+            finish();
          }
         return super.onOptionsItemSelected(item);
     }

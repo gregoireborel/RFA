@@ -19,8 +19,9 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
-            android:name="com.example.gregoire.rfa.HomeActivity"
-            android:label="@string/app_name" >
+            android:name="com.example.gregoire.rfa.LoginActivity"
+            android:label="@string/app_name"
+            android:windowSoftInputMode="adjustResize|stateHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -28,12 +29,11 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="com.example.gregoire.rfa.LoginActivity"
-            android:label="@string/title_activity_login"
-            android:windowSoftInputMode="adjustResize|stateHidden"
-            android:noHistory="true"
-            android:excludeFromRecents="true">
+            android:name="com.example.gregoire.rfa.HomeActivity"
+            android:label="@string/app_name"
+            android:windowSoftInputMode="adjustResize|stateHidden">
         </activity>
+
 
         <meta-data
             android:name="com.google.android.gms.version"

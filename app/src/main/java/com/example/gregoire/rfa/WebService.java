@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
@@ -13,6 +14,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
 
 public class WebService
 {
@@ -34,7 +36,8 @@ public class WebService
 	
 	
 	/*Constructeurs*/
-	public WebService(String url) {
+	public WebService(String url)
+    {
 		URL = url;
 		httpclient = new DefaultHttpClient();
 	}
@@ -48,27 +51,22 @@ public class WebService
 	 * @return reponse du WebService
 	 * @throws Exception e
 	 */
-	private String sendGetRequest(String url) throws Exception {
-		try {
-			code = -1;
-			
-			/*On set l'adresse a une requete de type POST et on ajoute le content-type*/
-			HttpGet httpget = new HttpGet(url);
-			
-			/*On execute la requete et on recupere la reponse*/
-			HttpResponse response = httpclient.execute(httpget);
-			code = response.getStatusLine().getStatusCode();
-			
-			String rep = "";
-			InputStream stream = response.getEntity().getContent();
-			if (stream != null)
-				rep = stream.toString();
-			
-			if (response.getEntity() != null )
-                response.getEntity().consumeContent();
-			return rep;
-			
-		} catch (Exception e) {throw new Exception(e.getMessage()); }
+	private String sendGetRequest(String url) throws Exception
+    {
+        code = -1;
+        HttpGet httpget = new HttpGet(url);
+        HttpResponse response = httpclient.execute(httpget);
+
+        code = response.getStatusLine().getStatusCode();
+        String rep = "";
+        HttpEntity entity = response.getEntity();
+        if (entity != null)
+        {
+            rep = EntityUtils.toString(entity);
+            response.getEntity().consumeContent();
+            return rep;
+        }
+        return rep;
 	}
 
 	/**
@@ -166,7 +164,7 @@ public class WebService
 		try {
 			json = sendGetRequest(url);
 		} catch (Exception e) { throw new Exception(e.getMessage()); }
-		
+
 		if (code == 401)
 			json = "401";
 		
@@ -292,5 +290,5 @@ public class WebService
 		
 		return code;
 	}
-	
+
 }
