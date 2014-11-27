@@ -1,142 +1,154 @@
 package com.example.gregoire.rfa;
 
-import android.app.Activity;
-
 import android.app.ActionBar;
-import android.app.Fragment;
-import android.app.FragmentManager;
-import android.content.Context;
+import android.app.Activity;
+import android.app.DialogFragment;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.view.Gravity;
-import android.view.LayoutInflater;
+import android.support.v4.app.ActionBarDrawerToggle;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.util.Pair;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
-import android.support.v4.widget.DrawerLayout;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.TextView;
+import android.widget.EditText;
+import android.widget.ListView;
 
-import com.google.android.gms.drive.metadata.StringMetadataField;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
 
 
-public class HomeActivity extends Activity implements NavigationDrawerFragment.NavigationDrawerCallbacks
+public class HomeActivity extends Activity implements NoticeDialogFragment.NoticeDialogListener
 {
-    private WebService  m_webService;
-    private SharedPreferences m_prefs;
-    private String  m_email, m_password;
-
-    /**
-     * Fragment managing the behaviors, interactions and presentation of the navigation drawer.
-     */
-    private NavigationDrawerFragment mNavigationDrawerFragment;
-
-    /**
-     * Used to store the last screen title. For use in {@link #restoreActionBar()}.
-     */
-    private CharSequence mTitle;
+    private WebService              mWebService;
+    private SharedPreferences       mPrefs;
+    private String                  mEmail, mPassword;
+    private ArrayAdapter<String>    mItemsAdapter;
+    private DrawerLayout            mDrawer;
+    private ListView                mDrawerList;
+    private ActionBarDrawerToggle   mDrawerToggle;
+    private ArrayList<Pair<String, Integer>> mMap = new ArrayList<Pair<String, Integer>>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
 
-        this.m_webService = new WebService("http://tomcat8-wokesmeed.rhcloud.com");
-        this.m_prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        SharedPreferences.Editor editor = this.m_prefs.edit();
+        this.mWebService = new WebService("http://tomcat8-wokesmeed.rhcloud.com");
+        this.mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences.Editor editor = this.mPrefs.edit();
         editor.putBoolean("isLogged", true);
 
         Bundle extras = getIntent().getExtras();
-        if (extras != null)
-        {
-            m_email = extras.getString("email");
-            editor.putString("email", m_email);
-            m_password = extras.getString("password");
-            editor.putString("password", m_password);
-        }
-        else
-        {
-            m_email = this.m_prefs.getString("email", "");
-            m_password = this.m_prefs.getString("password", "");
+        if (extras != null) {
+            this.mEmail = extras.getString("email");
+            editor.putString("email", this.mEmail);
+            this.mPassword = extras.getString("password");
+            editor.putString("password", this.mPassword);
+        } else {
+            this.mEmail = this.mPrefs.getString("email", "");
+            this.mPassword = this.mPrefs.getString("password", "");
         }
         editor.commit();
 
-
         setContentView(R.layout.activity_home);
-        mNavigationDrawerFragment = (NavigationDrawerFragment)
-                getFragmentManager().findFragmentById(R.id.navigation_drawer);
-        mTitle = getTitle();
+        _initMenu();
+    }
 
-        // Set up the drawer.
-        mNavigationDrawerFragment.setUp(
-                R.id.navigation_drawer,
-                (DrawerLayout) findViewById(R.id.drawer_layout));
+    private void _initMenu()
+    {
+        this.mDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        this.mDrawer.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
+        this.mItemsAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1);
+        this.mDrawerList = (ListView) findViewById(R.id.navigation_drawer);
+        this.mDrawerList.setAdapter(this.mItemsAdapter);
+        setUpDrawerToggle();
 
         new Thread()
         {
             public void run()
             {
-                try
-                {
-                    if (m_webService.connectUser(m_email, m_password))
-                    {
-                        System.out.println("Feeds : " + m_webService.getFeeds());
+                try {
+                    if (mWebService.connectUser(mEmail, mPassword)) {
+                        String feeds = mWebService.getFeeds();
+                        JSONObject jsonObject = new JSONObject(feeds);
+                        JSONArray jArray = jsonObject.getJSONArray("feeds");
+                        for (int i = 0; i < jArray.length(); i++) {
+                            JSONObject row = jArray.getJSONObject(i);
+                            mMap.add(new Pair<String, Integer>(row.getString("title"), row.getInt("id")));
+                            mItemsAdapter.add(row.getString("title"));
+                           mItemsAdapter.notifyDataSetChanged();
+                        }
                     }
-                } catch (Exception e)   {   e.printStackTrace();    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }.start();
+        this.mDrawerList.setOnItemClickListener(new DrawerItemClickListener());
     }
 
-    @Override
-    public void onNavigationDrawerItemSelected(int position) {
-        // update the main content by replacing fragments
-        FragmentManager fragmentManager = getFragmentManager();
-        fragmentManager.beginTransaction()
-                .replace(R.id.container, PlaceholderFragment.newInstance(position + 1))
-                .commit();
-    }
-
-    public void onSectionAttached(int number) {
-        switch (number) {
-            case 1:
-                mTitle = getString(R.string.title_section1);
-                break;
-            case 2:
-                mTitle = getString(R.string.title_section2);
-                break;
-            case 3:
-                mTitle = getString(R.string.title_section3);
-                break;
-        }
-    }
-
-    public void restoreActionBar() {
+    private void setUpDrawerToggle()
+    {
         ActionBar actionBar = getActionBar();
-        actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
-        actionBar.setDisplayShowTitleEnabled(true);
-        actionBar.setTitle(mTitle);
+        actionBar.setDisplayHomeAsUpEnabled(true);
+        actionBar.setHomeButtonEnabled(true);
+
+        // ActionBarDrawerToggle ties together the the proper interactions
+        // between the navigation drawer and the action bar app icon.
+        this.mDrawerToggle = new ActionBarDrawerToggle(
+                this,                             /* host Activity */
+                this.mDrawer,                    /* DrawerLayout object */
+                R.drawable.ic_drawer,             /* nav drawer image to replace 'Up' caret */
+                R.string.navigation_drawer_open,  /* "open drawer" description for accessibility */
+                R.string.navigation_drawer_close  /* "close drawer" description for accessibility */
+        )
+        {
+            @Override
+            public void onDrawerClosed(View drawerView)
+            {
+                invalidateOptionsMenu(); // calls onPrepareOptionsMenu()
+            }
+
+            @Override
+            public void onDrawerOpened(View drawerView)
+            {
+                invalidateOptionsMenu(); // calls onPrepareOptionsMenu()
+            }
+        };
+
+        // Defer code dependent on restoration of previous instance state.
+        // NB: required for the drawer indicator to show up!
+        this.mDrawer.post(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                mDrawerToggle.syncState();
+            }
+        });
     }
 
-
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        if (!mNavigationDrawerFragment.isDrawerOpen()) {
-            // Only show items in the action bar relevant to this screen
-            // if the drawer is not showing. Otherwise, let the drawer
-            // decide what to show in the action bar.
-            getMenuInflater().inflate(R.menu.home, menu);
-            restoreActionBar();
-            return true;
-        }
+    public boolean onCreateOptionsMenu(Menu menu)
+    {
+        // Inflate the menu items for use in the action bar
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.home, menu);
         return super.onCreateOptionsMenu(menu);
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
+    public boolean onOptionsItemSelected(MenuItem item)
+    {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
@@ -147,61 +159,60 @@ public class HomeActivity extends Activity implements NavigationDrawerFragment.N
             {
                 public void run()
                 {
-                    try
-                    {
-                        m_webService.disconnectUser();
-                    } catch (Exception e)   {   e.printStackTrace();    }
+                    try {   mWebService.disconnectUser();   }
+                    catch (Exception e) {   e.printStackTrace();    }
                 }
             }.start();
 
-            SharedPreferences.Editor editor = this.m_prefs.edit();
+            SharedPreferences.Editor editor = this.mPrefs.edit();
             editor.putBoolean("isLogged", false);
             editor.commit();
             Intent i = new Intent(this, LoginActivity.class);
             startActivity(i);
             finish();
-         }
+        }
+        else if (id == R.id.add_feed)
+            askWhichFeed();
         return super.onOptionsItemSelected(item);
     }
 
-    /**
-     * A placeholder fragment containing a simple view.
-     */
-    public static class PlaceholderFragment extends Fragment {
-        /**
-         * The fragment argument representing the section number for this
-         * fragment.
-         */
-        private static final String ARG_SECTION_NUMBER = "section_number";
+    private void    askWhichFeed()
+    {
+        NoticeDialogFragment mDialog = new NoticeDialogFragment();
+        mDialog.show(getFragmentManager(), "NoticeDialogFragment");
+    }
 
-        /**
-         * Returns a new instance of this fragment for the given section
-         * number.
-         */
-        public static PlaceholderFragment newInstance(int sectionNumber) {
-            PlaceholderFragment fragment = new PlaceholderFragment();
-            Bundle args = new Bundle();
-            args.putInt(ARG_SECTION_NUMBER, sectionNumber);
-            fragment.setArguments(args);
-            return fragment;
-        }
-
-        public PlaceholderFragment() {
-        }
+    private class DrawerItemClickListener implements ListView.OnItemClickListener
+    {
 
         @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_home, container, false);
-            return rootView;
-        }
-
-        @Override
-        public void onAttach(Activity activity) {
-            super.onAttach(activity);
-            ((HomeActivity) activity).onSectionAttached(
-                    getArguments().getInt(ARG_SECTION_NUMBER));
+        public void onItemClick(AdapterView parent, View view, int position, long id)
+        {
+            // Highlight the selected item, update the title, and close the drawer
+            // update selected item and title, then close the drawer
+            mDrawerList.setItemChecked(position, true);
+            setTitle(".....");
+            mDrawer.closeDrawer(mDrawerList);
         }
     }
 
+    public void onDialogPositiveClick(DialogFragment dialog) throws Exception
+    {
+        final EditText new_feed = (EditText) findViewById(R.id.add_feed_edit_text);
+        System.out.println("New feed is " + new_feed.getText().toString());
+
+        new Thread()
+        {
+            public void run()
+            {
+                try {
+                    String addition_success = mWebService.addFeed(new_feed.getText().toString());
+                    System.out.println("Addition success " + addition_success);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }.start();
+        dialog.dismiss();
+    }
 }

@@ -69,14 +69,7 @@ public class WebService
         return rep;
 	}
 
-	/**
-	 * Envoie la requete POST au WebService.
-	 * @param url adresse du WebService
-	 * @param nameValuePairs donnees POST
-	 * @return reponse du WebService
-	 * @throws Exception e
-	 */
-	private String sendPostRequest(String url, List<NameValuePair> nameValuePairs) throws Exception {	
+	private String sendPostRequest(String url, List<NameValuePair> nameValuePairs) throws Exception {
 		try {
 			code = -1;
 			
@@ -104,12 +97,6 @@ public class WebService
 		} catch (Exception e) { throw new Exception(e.getMessage()); }
 	}
 
-	/**
-	 * Envoie la requete DELETE au WebService.
-	 * @param url adresse du WebService
-	 * @return reponse du WebService
-	 * @throws Exception
-	 */
 	private String sendDeleteRequest(String url) throws Exception {
 		try {
 			code = -1;
@@ -133,12 +120,8 @@ public class WebService
 		} catch (Exception e) {throw new Exception(e.getMessage()); }
 	}	
 	
-	
-	/*Methodes*/
-	
-	/*Creer session*/
-	public boolean connectUser(String email, String pwd) throws Exception {	
-		
+	public boolean connectUser(String email, String pwd) throws Exception {
+
 		String url = URL + NEW_SESSION;
 
         /*On set les donnees*/
@@ -149,17 +132,14 @@ public class WebService
 		try {   sendPostRequest(url, nameValuePairs);   }
         catch (Exception e) { throw new Exception(e.getMessage()); }
 
-		if (code == 200)
-        	return true;
-        else
-        	return false;
+        return code == 200;
 	}
 
 	/*Get session*/
 	public String getUserInfo(String email, String pwd) throws Exception {
 		
 		String url = URL + SESSION + EMAIL + email + PWD + pwd;
-		String json = "";
+		String json;
         
 		try {
 			json = sendGetRequest(url);
@@ -171,7 +151,6 @@ public class WebService
 		return json;
 	}
 	
-	/*Get feeds*/
 	public String getFeeds() throws Exception {
 		
 		String url = URL + FEEDS;
@@ -187,8 +166,7 @@ public class WebService
 		return json;
 	}
 	
-	/*Get feed*/
-	public String getFeedAll(int id) throws Exception {
+	public String getFeedContent(int id) throws Exception {
 		
 		String url = URL + FEED + Integer.toString(id);
 		String json = "";
@@ -205,7 +183,6 @@ public class WebService
 		return json;
 	}
 	
-	/*Get feed*/
 	public String getFeed(int id, int page, int limit) throws Exception {
 		
 		String url = URL + FEED + Integer.toString(id) + PAGE + Integer.toString(page) + LIMIT + Integer.toString(limit);
@@ -223,10 +200,9 @@ public class WebService
 		return json;
 	}
 	
-	/*Add feed*/
-	public String addFeed(String add_url) throws Exception {
-		String json = "";
-		
+	public String addFeed(String add_url) throws Exception
+    {
+		String json;
 		String url = URL + FEEDS;
         
         /*On set les donnees*/
@@ -246,7 +222,6 @@ public class WebService
 		
 	}
 	
-	/*Add user*/
 	public boolean addUser(String email, String pwd) throws Exception {
 
 		String url = URL + SESSION;
@@ -267,7 +242,6 @@ public class WebService
 		
 	}
 	
-	/*Delete session*/
 	public int disconnectUser() throws Exception {
 		
 		String url = URL + SESSION;
@@ -279,16 +253,16 @@ public class WebService
 		return code;
 	}
 	
-	/*Delete feed*/
-	public int deleteFeed(int id) throws Exception {
-		
+	public int deleteFeed(int id) throws Exception
+    {
 		String url = URL + FEED + Integer.toString(id);
         
-		try {
+		try
+        {
 			sendDeleteRequest(url);
-		} catch (Exception e) { throw new Exception(e.getMessage()); }
+		}
+        catch (Exception e) { throw new Exception(e.getMessage()); }
 		
 		return code;
 	}
-
 }

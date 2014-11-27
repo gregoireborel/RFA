@@ -5,7 +5,6 @@ import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 
 import android.app.LoaderManager.LoaderCallbacks;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.CursorLoader;
 import android.content.Intent;
@@ -34,18 +33,6 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.SignInButton;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
-
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -67,13 +54,13 @@ public class LoginActivity extends PlusBaseActivity implements LoaderCallbacks<C
 
     // UI references.
     private AutoCompleteTextView mEmailView;
-    private EditText mPasswordView;
-    private View mProgressView;
-    private View mEmailLoginFormView;
-    private SignInButton mPlusSignInButton;
-    private View mSignOutButtons;
-    private View mLoginFormView;
-    private SharedPreferences m_prefs;
+    private EditText            mPasswordView;
+    private View                mProgressView;
+    private View                mEmailLoginFormView;
+    private SignInButton        mPlusSignInButton;
+    private View                mSignOutButtons;
+    private View                mLoginFormView;
+    private SharedPreferences   mPrefs;
 
 
     @Override
@@ -82,8 +69,8 @@ public class LoginActivity extends PlusBaseActivity implements LoaderCallbacks<C
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        this.m_prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        boolean isLogged = this.m_prefs.getBoolean("isLogged", false);  //get value of last login
+        this.mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+        boolean isLogged = this.mPrefs.getBoolean("isLogged", false);  //get value of last login
         if (isLogged)
         {
             Intent i = new Intent(this, HomeActivity.class);
