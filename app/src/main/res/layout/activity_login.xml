@@ -61,7 +61,7 @@
             </LinearLayout>
 
             <LinearLayout
-                android:id="@+id/email_login_form"
+                android:id="@+id/email_register_form"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
@@ -95,6 +95,14 @@
                     android:layout_marginTop="16dp"
                     android:text="@string/action_sign_in"
                     android:textStyle="bold"/>
+
+                <TextView
+                    android:id="@+id/sign_up"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:text="Click here to sign up"
+                    android:gravity="center"
+                    android:onClick="signUp"/>
 
             </LinearLayout>
         </LinearLayout>

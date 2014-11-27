@@ -9,5 +9,7 @@
     <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="action_example">Example action</string>
     <string name="action_logout">Logout</string>
+    <string name="sign_up">Sign up</string>
+    <string name="password_confirmation">Password confirmation</string>
 
 </resources>

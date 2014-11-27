@@ -3,8 +3,7 @@ package com.example.gregoire.rfa;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
-
-import android.app.LoaderManager.LoaderCallbacks;
+import android.app.LoaderManager;
 import android.content.Context;
 import android.content.CursorLoader;
 import android.content.Intent;
@@ -13,7 +12,6 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
-
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -21,7 +19,6 @@ import android.provider.ContactsContract;
 import android.text.TextUtils;
 import android.view.KeyEvent;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
@@ -36,16 +33,7 @@ import com.google.android.gms.common.SignInButton;
 import java.util.ArrayList;
 import java.util.List;
 
-
-/**
- * A login screen that offers login via email/password and via Google+ sign in.
- * <p/>
- * ************ IMPORTANT SETUP NOTES: ************
- * In order for Google+ sign in to work with your app, you must first go to:
- * https://developers.google.com/+/mobile/android/getting-started#step_1_enable_the_google_api
- * and follow the steps in "Step 1" to create an OAuth 2.0 client for your package.
- */
-public class LoginActivity extends PlusBaseActivity implements LoaderCallbacks<Cursor>
+public class RegisterActivity extends PlusBaseActivity implements LoaderManager.LoaderCallbacks<Cursor>
 {
     /**
      * Keep track of the login task to ensure we can cancel it if requested.
@@ -53,80 +41,56 @@ public class LoginActivity extends PlusBaseActivity implements LoaderCallbacks<C
     private UserLoginTask mAuthTask = null;
 
     // UI references.
-    private AutoCompleteTextView mEmailView;
-    private EditText            mPasswordView;
-    private View                mProgressView;
-    private View                mEmailLoginFormView;
-    private SignInButton        mPlusSignInButton;
-    private View                mSignOutButtons;
-    private View                mLoginFormView;
-    private SharedPreferences   mPrefs;
+    private AutoCompleteTextView    mEmailView;
+    private EditText                mPasswordView;
+    private EditText                mPasswordConfirmationView;
+    private View                    mProgressView;
+    private View                    mEmailLoginFormView;
+    private SignInButton            mPlusSignInButton;
+    private View                    mSignOutButtons;
+    private View                    mLoginFormView;
+    private SharedPreferences       mPrefs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_login);
+        setContentView(R.layout.activity_register);
 
         this.mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
-        boolean isLogged = this.mPrefs.getBoolean("isLogged", false);  //get value of last login
-        if (isLogged)
-        {
-            Intent i = new Intent(this, HomeActivity.class);
-            startActivity(i);
-            finish();
-        }
-
-        // Find the Google+ sign in button.
-        mPlusSignInButton = (SignInButton) findViewById(R.id.plus_sign_in_button);
-        if (supportsGooglePlayServices()) {
-            // Set a listener to connect the user when the G+ button is clicked.
-            mPlusSignInButton.setOnClickListener(new OnClickListener()
-            {
-                @Override
-                public void onClick(View view)
-                {
-                    signIn();
-                }
-            });
-        } else {
-            // Don't offer G+ sign in if the app's version is too low to support Google Play
-            // Services.
-            mPlusSignInButton.setVisibility(View.GONE);
-            return;
-        }
 
         // Set up the login form.
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
         populateAutoComplete();
 
         mPasswordView = (EditText) findViewById(R.id.password);
+        mPasswordConfirmationView = (EditText) findViewById(R.id.password_confirmation);
         mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener()
         {
             @Override
             public boolean onEditorAction(TextView textView, int id, KeyEvent keyEvent)
             {
-                if (id == R.id.login || id == EditorInfo.IME_NULL) {
-                    attemptLogin();
+                if (id == R.id.sign_up || id == EditorInfo.IME_NULL) {
+                    attemptRegistering();
                     return true;
                 }
                 return false;
             }
         });
 
-        Button mEmailSignInButton = (Button) findViewById(R.id.email_sign_in_button);
-        mEmailSignInButton.setOnClickListener(new OnClickListener()
+        Button mEmailSignInButton = (Button) findViewById(R.id.email_sign_up_button);
+        mEmailSignInButton.setOnClickListener(new View.OnClickListener()
         {
             @Override
             public void onClick(View view)
             {
-                attemptLogin();
+                attemptRegistering();
             }
         });
 
-        mLoginFormView = findViewById(R.id.login_form);
-        mProgressView = findViewById(R.id.login_progress);
-        mEmailLoginFormView = findViewById(R.id.email_login_form);
+        mLoginFormView = findViewById(R.id.register_form);
+        mProgressView = findViewById(R.id.register_progress);
+        mEmailLoginFormView = findViewById(R.id.email_register_form);
         mSignOutButtons = findViewById(R.id.plus_sign_out_buttons);
     }
 
@@ -147,7 +111,7 @@ public class LoginActivity extends PlusBaseActivity implements LoaderCallbacks<C
      * If there are form errors (invalid email, missing fields, etc.), the
      * errors are presented and no actual login attempt is made.
      */
-    public void attemptLogin()
+    public void attemptRegistering()
     {
         if (mAuthTask != null) {
             return;
@@ -261,7 +225,7 @@ public class LoginActivity extends PlusBaseActivity implements LoaderCallbacks<C
     {
         //Set up sign out and disconnect buttons.
         Button signOutButton = (Button) findViewById(R.id.plus_sign_out_button);
-        signOutButton.setOnClickListener(new OnClickListener()
+        signOutButton.setOnClickListener(new View.OnClickListener()
         {
             @Override
             public void onClick(View view)
@@ -270,7 +234,7 @@ public class LoginActivity extends PlusBaseActivity implements LoaderCallbacks<C
             }
         });
         Button disconnectButton = (Button) findViewById(R.id.plus_disconnect_button);
-        disconnectButton.setOnClickListener(new OnClickListener()
+        disconnectButton.setOnClickListener(new View.OnClickListener()
         {
             @Override
             public void onClick(View view)
@@ -375,7 +339,7 @@ public class LoginActivity extends PlusBaseActivity implements LoaderCallbacks<C
     {
         //Create adapter to tell the AutoCompleteTextView what to show in its dropdown list.
         ArrayAdapter<String> adapter =
-                new ArrayAdapter<String>(LoginActivity.this,
+                new ArrayAdapter<String>(RegisterActivity.this,
                         android.R.layout.simple_dropdown_item_1line, emailAddressCollection);
 
         mEmailView.setAdapter(adapter);
@@ -392,7 +356,7 @@ public class LoginActivity extends PlusBaseActivity implements LoaderCallbacks<C
         private final String mPassword;
         private int          code;
         private WebService   m_webService;
-        private Context      m_ctx;
+        private Context m_ctx;
 
         UserLoginTask(String email, String password, Context ctx)
         {
@@ -442,6 +406,3 @@ public class LoginActivity extends PlusBaseActivity implements LoaderCallbacks<C
         }
     }
 }
-
-
-
