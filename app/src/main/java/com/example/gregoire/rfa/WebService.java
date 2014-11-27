@@ -235,11 +235,7 @@ public class WebService
 			sendPostRequest(url, nameValuePairs);
 		} catch (Exception e) { throw new Exception(e.getMessage()); }
 		
-		if (code == 422)
-			return false;
-		
-		return true;
-		
+		return code != 422;
 	}
 	
 	public int disconnectUser() throws Exception {

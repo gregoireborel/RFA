@@ -6,6 +6,7 @@ import android.app.DialogFragment;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.StrictMode;
 import android.preference.PreferenceManager;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.view.GravityCompat;
@@ -42,6 +43,11 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
     {
         super.onCreate(savedInstanceState);
 
+        if (android.os.Build.VERSION.SDK_INT > 9) {
+            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+            StrictMode.setThreadPolicy(policy);
+        }
+
         this.mWebService = new WebService("http://tomcat8-wokesmeed.rhcloud.com");
         this.mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
         SharedPreferences.Editor editor = this.mPrefs.edit();
@@ -72,27 +78,23 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
         this.mDrawerList.setAdapter(this.mItemsAdapter);
         setUpDrawerToggle();
 
-        new Thread()
-        {
-            public void run()
-            {
-                try {
-                    if (mWebService.connectUser(mEmail, mPassword)) {
-                        String feeds = mWebService.getFeeds();
+            try {
+                    if (this.mWebService.connectUser(this.mEmail, this.mPassword))
+                    {
+                        String feeds = this.mWebService.getFeeds();
                         JSONObject jsonObject = new JSONObject(feeds);
                         JSONArray jArray = jsonObject.getJSONArray("feeds");
-                        for (int i = 0; i < jArray.length(); i++) {
+                        for (int i = 0; i < jArray.length(); i++)
+                        {
                             JSONObject row = jArray.getJSONObject(i);
-                            mMap.add(new Pair<String, Integer>(row.getString("title"), row.getInt("id")));
-                            mItemsAdapter.add(row.getString("title"));
-                           mItemsAdapter.notifyDataSetChanged();
+                            this.mMap.add(new Pair<String, Integer>(row.getString("title"), row.getInt("id")));
+                            this.mItemsAdapter.add(row.getString("title"));
+                            this.mItemsAdapter.notifyDataSetChanged();
                         }
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                e.printStackTrace();
             }
-        }.start();
         this.mDrawerList.setOnItemClickListener(new DrawerItemClickListener());
     }
 
@@ -155,14 +157,8 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
         int id = item.getItemId();
         if (id == R.id.action_logout)
         {
-            new Thread()
-            {
-                public void run()
-                {
-                    try {   mWebService.disconnectUser();   }
-                    catch (Exception e) {   e.printStackTrace();    }
-                }
-            }.start();
+            try {   mWebService.disconnectUser();   }
+            catch (Exception e) {   e.printStackTrace();    }
 
             SharedPreferences.Editor editor = this.mPrefs.edit();
             editor.putBoolean("isLogged", false);

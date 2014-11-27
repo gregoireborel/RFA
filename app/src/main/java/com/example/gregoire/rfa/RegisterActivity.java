@@ -45,7 +45,7 @@ public class RegisterActivity extends PlusBaseActivity implements LoaderManager.
     private EditText                mPasswordView;
     private EditText                mPasswordConfirmationView;
     private View                    mProgressView;
-    private View                    mEmailLoginFormView;
+    private View mEmailSignUpFormView;
     private SignInButton            mPlusSignInButton;
     private View                    mSignOutButtons;
     private View                    mLoginFormView;
@@ -90,7 +90,7 @@ public class RegisterActivity extends PlusBaseActivity implements LoaderManager.
 
         mLoginFormView = findViewById(R.id.register_form);
         mProgressView = findViewById(R.id.register_progress);
-        mEmailLoginFormView = findViewById(R.id.email_register_form);
+        mEmailSignUpFormView = findViewById(R.id.email_sign_up_form);
         mSignOutButtons = findViewById(R.id.plus_sign_out_buttons);
     }
 
@@ -124,6 +124,7 @@ public class RegisterActivity extends PlusBaseActivity implements LoaderManager.
         // Store values at the time of the login attempt.
         String email = mEmailView.getText().toString();
         String password = mPasswordView.getText().toString();
+        String password_confirmation = mPasswordConfirmationView.getText().toString();
 
         boolean cancel = false;
         View focusView = null;
@@ -153,6 +154,12 @@ public class RegisterActivity extends PlusBaseActivity implements LoaderManager.
         {
             mPasswordView.setError(getString(R.string.error_invalid_password));
             focusView = mPasswordView;
+            cancel = true;
+        }
+        else if (!password.equals(password_confirmation))
+        {
+            mPasswordConfirmationView.setError("Password and confirmation don't match");
+            focusView = mPasswordConfirmationView;
             cancel = true;
         }
 
@@ -256,9 +263,9 @@ public class RegisterActivity extends PlusBaseActivity implements LoaderManager.
         //TODO: Update this logic to also handle the user logged in by email.
         boolean connected = getPlusClient().isConnected();
 
-        mSignOutButtons.setVisibility(connected ? View.VISIBLE : View.GONE);
-        mPlusSignInButton.setVisibility(connected ? View.GONE : View.VISIBLE);
-        mEmailLoginFormView.setVisibility(connected ? View.GONE : View.VISIBLE);
+      //  mSignOutButtons.setVisibility(connected ? View.VISIBLE : View.GONE);
+       // mPlusSignInButton.setVisibility(connected ? View.GONE : View.VISIBLE);
+        mEmailSignUpFormView.setVisibility(connected ? View.GONE : View.VISIBLE);
     }
 
     @Override
@@ -371,7 +378,7 @@ public class RegisterActivity extends PlusBaseActivity implements LoaderManager.
         {
             try
             {
-                if (this.m_webService.connectUser(mEmail, mPassword))
+                if (this.m_webService.addUser(mEmail, mPassword))
                     return (true);
             }
             catch (Exception e) {   e.printStackTrace();    }

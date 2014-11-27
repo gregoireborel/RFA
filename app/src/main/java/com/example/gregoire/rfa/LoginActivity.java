@@ -130,7 +130,7 @@ public class LoginActivity extends PlusBaseActivity implements LoaderCallbacks<C
         mSignOutButtons = findViewById(R.id.plus_sign_out_buttons);
     }
 
-    public void signUp()
+    public void signUp(View v)
     {
         Intent i = new Intent(this, RegisterActivity.class);
         startActivity(i);
