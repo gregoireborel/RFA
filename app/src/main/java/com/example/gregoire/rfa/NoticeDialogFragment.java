@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.EditText;
 
 @TargetApi(Build.VERSION_CODES.HONEYCOMB)
 public class NoticeDialogFragment extends DialogFragment
@@ -43,7 +44,7 @@ public class NoticeDialogFragment extends DialogFragment
         AlertDialog.Builder dialogBuilder;
 
         LayoutInflater inflater = LayoutInflater.from(getActivity());
-        View v = inflater.inflate(R.layout.add_feed_dialog, null);
+        final View v = inflater.inflate(R.layout.add_feed_dialog, null);
 
         dialogBuilder = new AlertDialog.Builder(getActivity());
         dialogBuilder.setMessage("Add a feed")
@@ -53,13 +54,19 @@ public class NoticeDialogFragment extends DialogFragment
                         // User cancelled the dialog
                     }
                 })
-                .setPositiveButton("Submit", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        // Send the positive button event back to the host activity
-                        try {
-                            mListener.onDialogPositiveClick(NoticeDialogFragment.this);
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                .setPositiveButton("Submit", new DialogInterface.OnClickListener()
+                {
+                    public void onClick(DialogInterface dialog, int id)
+                    {
+                        EditText valueView = (EditText) v.findViewById(R.id.add_feed_edit_text);
+                        if (valueView != null)
+                        {
+                            String value = valueView.getText().toString();
+                            try {
+                                mListener.onDialogPositiveClick(NoticeDialogFragment.this, value);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
                         }
                     }
                 });
@@ -67,7 +74,7 @@ public class NoticeDialogFragment extends DialogFragment
     }
 
     public interface NoticeDialogListener {
-        public void onDialogPositiveClick(DialogFragment dialog) throws Exception;
+        public void onDialogPositiveClick(DialogFragment dialog, String value) throws Exception;
     }
 }
 

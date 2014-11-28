@@ -194,36 +194,25 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
         }
     }
 
-    public void onDialogPositiveClick(DialogFragment dialog) throws Exception
+    public void onDialogPositiveClick(DialogFragment dialog, String feed_url) throws Exception
     {
-        LayoutInflater inflater = LayoutInflater.from(this);
-
-        View v = inflater.inflate(R.layout.add_feed_dialog, null);
-        EditText new_feed = (EditText) v.findViewById(R.id.add_feed_edit_text);
-        System.out.println("New feed is " + new_feed.getText().toString());
-
-        try
+        if (feed_url.isEmpty())
+            Toast.makeText(getApplicationContext(), "Error: can't add feed. Is the URL correct?", Toast.LENGTH_SHORT).show();
+        else
         {
-            String addition_success = mWebService.addFeed(new_feed.getText().toString());
-            if (addition_success == "401" || addition_success == "404")
+            System.out.println("URL = " + feed_url);
+            String feed_content = mWebService.addFeed("http://" + feed_url);
+            if (feed_content == "401" || feed_content == "404")
                 Toast.makeText(getApplicationContext(), "Error: can't add feed. Is the URL correct?", Toast.LENGTH_SHORT).show();
             else
             {
-                System.out.println("Addition success " + addition_success);
-             //   JSONObject jsonObject = new JSONObject(addition_success);
-             /*   JSONArray jArray = jsonObject.getJSONArray("feeds");
-                for (int i = 0; i < jArray.length(); i++)
-                {
-                    JSONObject row = jArray.getJSONObject(i);
-                    this.mMap.add(new Pair<String, Integer>(row.getString("title"), row.getInt("id")));
-                    this.mItemsAdapter.add(row.getString("title"));
-                    this.mItemsAdapter.notifyDataSetChanged(); */
-                // Check if already exists
-                // add Title to adapter, notifychanges
-                // add Title and ID to Map
+                JSONObject jsonObject = new JSONObject(feed_content);
+                this.mMap.add(new Pair<String, Integer>(jsonObject.getString("title"), jsonObject.getInt("id")));
+                this.mItemsAdapter.add(jsonObject.getString("title"));
+                this.mItemsAdapter.notifyDataSetChanged();
                 Toast.makeText(getApplicationContext(), "Feed added successfully", Toast.LENGTH_SHORT).show();
             }
-        } catch (Exception e)   { e.printStackTrace();    }
+        }
         dialog.dismiss();
     }
 }
