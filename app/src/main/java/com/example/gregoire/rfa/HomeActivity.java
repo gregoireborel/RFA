@@ -12,6 +12,7 @@ import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.util.Pair;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -195,7 +196,10 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
 
     public void onDialogPositiveClick(DialogFragment dialog) throws Exception
     {
-        EditText new_feed = (EditText) findViewById(R.id.add_feed_edit_text);
+        LayoutInflater inflater = LayoutInflater.from(this);
+
+        View v = inflater.inflate(R.layout.add_feed_dialog, null);
+        EditText new_feed = (EditText) v.findViewById(R.id.add_feed_edit_text);
         System.out.println("New feed is " + new_feed.getText().toString());
 
         try
@@ -206,10 +210,18 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
             else
             {
                 System.out.println("Addition success " + addition_success);
+             //   JSONObject jsonObject = new JSONObject(addition_success);
+             /*   JSONArray jArray = jsonObject.getJSONArray("feeds");
+                for (int i = 0; i < jArray.length(); i++)
+                {
+                    JSONObject row = jArray.getJSONObject(i);
+                    this.mMap.add(new Pair<String, Integer>(row.getString("title"), row.getInt("id")));
+                    this.mItemsAdapter.add(row.getString("title"));
+                    this.mItemsAdapter.notifyDataSetChanged(); */
                 // Check if already exists
                 // add Title to adapter, notifychanges
                 // add Title and ID to Map
-
+                Toast.makeText(getApplicationContext(), "Feed added successfully", Toast.LENGTH_SHORT).show();
             }
         } catch (Exception e)   { e.printStackTrace();    }
         dialog.dismiss();
