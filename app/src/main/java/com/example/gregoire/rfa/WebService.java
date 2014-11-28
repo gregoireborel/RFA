@@ -219,7 +219,6 @@ public class WebService
 			json = "404";
 		
 		return json;
-		
 	}
 	
 	public boolean addUser(String email, String pwd) throws Exception {

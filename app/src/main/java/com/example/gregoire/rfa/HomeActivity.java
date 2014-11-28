@@ -20,6 +20,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -194,21 +195,23 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
 
     public void onDialogPositiveClick(DialogFragment dialog) throws Exception
     {
-        final EditText new_feed = (EditText) findViewById(R.id.add_feed_edit_text);
+        EditText new_feed = (EditText) findViewById(R.id.add_feed_edit_text);
         System.out.println("New feed is " + new_feed.getText().toString());
 
-        new Thread()
+        try
         {
-            public void run()
+            String addition_success = mWebService.addFeed(new_feed.getText().toString());
+            if (addition_success == "401" || addition_success == "404")
+                Toast.makeText(getApplicationContext(), "Error: can't add feed. Is the URL correct?", Toast.LENGTH_SHORT).show();
+            else
             {
-                try {
-                    String addition_success = mWebService.addFeed(new_feed.getText().toString());
-                    System.out.println("Addition success " + addition_success);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                System.out.println("Addition success " + addition_success);
+                // Check if already exists
+                // add Title to adapter, notifychanges
+                // add Title and ID to Map
+
             }
-        }.start();
+        } catch (Exception e)   { e.printStackTrace();    }
         dialog.dismiss();
     }
 }

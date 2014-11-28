@@ -42,26 +42,27 @@ public class NoticeDialogFragment extends DialogFragment
     {
         AlertDialog.Builder dialogBuilder;
 
-            LayoutInflater inflater = LayoutInflater.from(getActivity());
-            View v = inflater.inflate(R.layout.add_feed_dialog, null);
-            dialogBuilder = new AlertDialog.Builder(getActivity());
-            dialogBuilder.setMessage("Add a feed")
-                    .setView(v)
-                    .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int id) {
-                            // User cancelled the dialog
+        LayoutInflater inflater = LayoutInflater.from(getActivity());
+        View v = inflater.inflate(R.layout.add_feed_dialog, null);
+
+        dialogBuilder = new AlertDialog.Builder(getActivity());
+        dialogBuilder.setMessage("Add a feed")
+                .setView(v)
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        // User cancelled the dialog
+                    }
+                })
+                .setPositiveButton("Submit", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        // Send the positive button event back to the host activity
+                        try {
+                            mListener.onDialogPositiveClick(NoticeDialogFragment.this);
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
-                    })
-                    .setPositiveButton("Submit", new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int id) {
-                            // Send the positive button event back to the host activity
-                            try {
-                                mListener.onDialogPositiveClick(NoticeDialogFragment.this);
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    });
+                    }
+                });
         return (dialogBuilder.create());
     }
 
