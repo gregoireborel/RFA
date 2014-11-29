@@ -91,28 +91,27 @@ public class WebService
 			return rep;
 	}
 
-	private String sendDeleteRequest(String url) throws Exception {
-		try {
-			code = -1;
-			
-			/*On set l'adresse a une requete de type POST et on ajoute le content-type*/
-			HttpDelete httpdelete = new HttpDelete(url);
-			
-			/*On execute la requete et on recupere la reponse*/
-			HttpResponse response = httpclient.execute(httpdelete);
-			code = response.getStatusLine().getStatusCode();
-			
-			String rep = "";
-			InputStream stream = response.getEntity().getContent();
-			if (stream != null)
-				rep = stream.toString();
-			
-			if (response.getEntity() != null )
-                response.getEntity().consumeContent();
-			return rep;
-			
-		} catch (Exception e) {throw new Exception(e.getMessage()); }
-	}	
+	private String sendDeleteRequest(String url) throws Exception
+    {
+        code = -1;
+
+        /*On set l'adresse a une requete de type POST et on ajoute le content-type*/
+        HttpDelete httpdelete = new HttpDelete(url);
+
+        /*On execute la requete et on recupere la reponse*/
+        HttpResponse response = httpclient.execute(httpdelete);
+        code = response.getStatusLine().getStatusCode();
+
+        String rep = "";
+        HttpEntity entity = response.getEntity();
+        if (entity != null)
+        {
+            rep = EntityUtils.toString(entity);
+            response.getEntity().consumeContent();
+            return rep;
+        }
+        return rep;
+	}
 	
 	public boolean connectUser(String email, String pwd) throws Exception {
 

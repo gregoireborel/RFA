@@ -35,12 +35,15 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
     private WebService              mWebService;
     private SharedPreferences       mPrefs;
     private String                  mEmail, mPassword;
+    private ArrayList<String>       mData;
     private ArrayAdapter<String>    mItemsAdapter;
     private DrawerLayout            mDrawer;
     private ListView                mDrawerList;
     private ActionBarDrawerToggle   mDrawerToggle;
     private ArrayList<Pair<String, Integer>> mMap = new ArrayList<Pair<String, Integer>>();
     private ProgressDialog          pDialog;
+    private int                     mCurrentFeed = -1;
+    private int                     mCurrentPosition = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -67,7 +70,7 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
             this.mEmail = this.mPrefs.getString("email", "");
             this.mPassword = this.mPrefs.getString("password", "");
         }
-        editor.commit();
+        editor.apply();
 
         setContentView(R.layout.activity_home);
         _initMenu();
@@ -77,9 +80,8 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
     {
         this.mDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         this.mDrawer.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
-        this.mItemsAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1);
+        this.mData = new ArrayList<String>();
         this.mDrawerList = (ListView) findViewById(R.id.navigation_drawer);
-      //  this.mDrawerList.setAdapter(this.mItemsAdapter);
         setUpDrawerToggle();
         new GetPosts().execute();
 
@@ -150,20 +152,27 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
 
             SharedPreferences.Editor editor = this.mPrefs.edit();
             editor.putBoolean("isLogged", false);
-            editor.commit();
+            editor.apply();
             Intent i = new Intent(this, LoginActivity.class);
             startActivity(i);
             finish();
         }
+        else if (id == R.id.delete_feed)
+            deleteFeed();
         else if (id == R.id.add_feed)
             askWhichFeed();
         return super.onOptionsItemSelected(item);
     }
 
-    private void    askWhichFeed()
+    private void deleteFeed()
     {
-        NoticeDialogFragment mDialog = new NoticeDialogFragment();
-        mDialog.show(getFragmentManager(), "NoticeDialogFragment");
+        new DeleteFeed().execute();
+    }
+
+    private void askWhichFeed()
+    {
+        NoticeDialogFragment    noticeDialogFragment = new NoticeDialogFragment();
+        noticeDialogFragment.show(getFragmentManager(), "NoticeDialogFragment");
     }
 
     private class DrawerItemClickListener implements ListView.OnItemClickListener
@@ -175,7 +184,8 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
             // Highlight the selected item, update the title, and close the drawer
             // update selected item and title, then close the drawer
             mDrawerList.setItemChecked(position, true);
-
+            mCurrentFeed = mMap.get(position).second;
+            mCurrentPosition = position;
             setTitle(mMap.get(position).first);
             mDrawer.closeDrawer(mDrawerList);
         }
@@ -259,7 +269,8 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
 
     private void setFeedListAdapter(ArrayList<String> feedList)
     {
-        this.mItemsAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, feedList);
+        this.mData = feedList;
+        this.mItemsAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, this.mData);
         this.mDrawerList.setAdapter(this.mItemsAdapter);
     }
 
@@ -291,7 +302,7 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
                 return "failed";
             else
             {
-                JSONObject jsonObject = null;
+                JSONObject jsonObject;
                 try
                 {
                     jsonObject = new JSONObject(feed_content);
@@ -322,7 +333,63 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
 
     private void updateFeedListAdapter(String newFeed)
     {
-        this.mItemsAdapter.add(newFeed);
+        this.mData.add(newFeed);
+        this.mItemsAdapter.notifyDataSetChanged();
+    }
+
+    private class DeleteFeed extends AsyncTask<Void, Void, String>
+    {
+        @Override
+        protected void onPreExecute()
+        {
+            super.onPreExecute();
+            // Showing progress dialog
+            pDialog = new ProgressDialog(HomeActivity.this);
+            pDialog.setMessage("Please wait...");
+            pDialog.setCancelable(false);
+            pDialog.show();
+        }
+
+        @Override
+        protected String doInBackground(Void... params)
+        {
+            if (mCurrentFeed != -1)
+             {
+                try
+                {
+                    if (mWebService.deleteFeed(mCurrentFeed) == -1)
+                        return "failed";
+                    else
+                    {
+                        mCurrentFeed = -1;
+                        mMap.remove(mCurrentPosition);
+                        return "success";
+                    }
+                }
+                catch (Exception e) {   e.printStackTrace();    }
+            }
+            return "failed";
+        }
+
+        @Override
+        protected void onPostExecute(String result)
+        {
+            super.onPostExecute(result);
+            // Dismiss the progress dialog
+            if (pDialog.isShowing())
+                pDialog.dismiss();
+            if (result.equals("success")) {
+                removeFromAdapter();
+                Toast.makeText(getApplicationContext(), "Feed removed successfully", Toast.LENGTH_SHORT).show();
+            }
+            else
+                Toast.makeText(getApplicationContext(), "Error: no feed selected", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void    removeFromAdapter()
+    {
+        this.mData.remove(mCurrentPosition);
         this.mItemsAdapter.notifyDataSetChanged();
     }
 }
