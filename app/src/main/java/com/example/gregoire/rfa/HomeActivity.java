@@ -50,10 +50,11 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
     {
         super.onCreate(savedInstanceState);
 
-       if (android.os.Build.VERSION.SDK_INT > 9) {
+       if (android.os.Build.VERSION.SDK_INT > 9)
+       {
             StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
             StrictMode.setThreadPolicy(policy);
-        }
+       }
 
         this.mWebService = new WebService("http://tomcat8-wokesmeed.rhcloud.com");
         this.mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
@@ -61,12 +62,15 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
         editor.putBoolean("isLogged", true);
 
         Bundle extras = getIntent().getExtras();
-        if (extras != null) {
+        if (extras != null)
+        {
             this.mEmail = extras.getString("email");
             editor.putString("email", this.mEmail);
             this.mPassword = extras.getString("password");
             editor.putString("password", this.mPassword);
-        } else {
+        }
+        else
+        {
             this.mEmail = this.mPrefs.getString("email", "");
             this.mPassword = this.mPrefs.getString("password", "");
         }
@@ -86,6 +90,7 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
         new GetPosts().execute();
 
         this.mDrawerList.setOnItemClickListener(new DrawerItemClickListener());
+        mDrawer.openDrawer(mDrawerList);
     }
 
     private void setUpDrawerToggle()
@@ -175,6 +180,15 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
         noticeDialogFragment.show(getFragmentManager(), "NoticeDialogFragment");
     }
 
+    public void onDialogPositiveClick(DialogFragment dialog, String feed_url) throws Exception
+    {
+        dialog.dismiss();
+        if (feed_url.isEmpty())
+            Toast.makeText(getApplicationContext(), "Error: can't add feed. Is the URL correct?", Toast.LENGTH_SHORT).show();
+        else
+            new AddFeed().execute(feed_url);
+    }
+
     private class DrawerItemClickListener implements ListView.OnItemClickListener
     {
 
@@ -191,18 +205,6 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
         }
     }
 
-    public void onDialogPositiveClick(DialogFragment dialog, String feed_url) throws Exception
-    {
-        dialog.dismiss();
-        if (feed_url.isEmpty())
-            Toast.makeText(getApplicationContext(), "Error: can't add feed. Is the URL correct?", Toast.LENGTH_SHORT).show();
-        else
-            new AddFeed().execute(feed_url);
-    }
-
-    /**
-     * Async task class to get json by making HTTP call
-     * */
     private class GetPosts extends AsyncTask<Void, Void, String>
     {
         ArrayList<String> mFeedList = new ArrayList<String>();
