@@ -3,8 +3,10 @@ package com.example.gregoire.rfa;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.DialogFragment;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.preference.PreferenceManager;
@@ -12,18 +14,17 @@ import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.util.Pair;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -39,13 +40,14 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
     private ListView                mDrawerList;
     private ActionBarDrawerToggle   mDrawerToggle;
     private ArrayList<Pair<String, Integer>> mMap = new ArrayList<Pair<String, Integer>>();
+    private ProgressDialog          pDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
 
-        if (android.os.Build.VERSION.SDK_INT > 9) {
+       if (android.os.Build.VERSION.SDK_INT > 9) {
             StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
             StrictMode.setThreadPolicy(policy);
         }
@@ -77,26 +79,10 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
         this.mDrawer.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
         this.mItemsAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1);
         this.mDrawerList = (ListView) findViewById(R.id.navigation_drawer);
-        this.mDrawerList.setAdapter(this.mItemsAdapter);
+      //  this.mDrawerList.setAdapter(this.mItemsAdapter);
         setUpDrawerToggle();
+        new GetPosts().execute();
 
-            try {
-                    if (this.mWebService.connectUser(this.mEmail, this.mPassword))
-                    {
-                        String feeds = this.mWebService.getFeeds();
-                        JSONObject jsonObject = new JSONObject(feeds);
-                        JSONArray jArray = jsonObject.getJSONArray("feeds");
-                        for (int i = 0; i < jArray.length(); i++)
-                        {
-                            JSONObject row = jArray.getJSONObject(i);
-                            this.mMap.add(new Pair<String, Integer>(row.getString("title"), row.getInt("id")));
-                            this.mItemsAdapter.add(row.getString("title"));
-                            this.mItemsAdapter.notifyDataSetChanged();
-                        }
-                    }
-                } catch (Exception e) {
-                e.printStackTrace();
-            }
         this.mDrawerList.setOnItemClickListener(new DrawerItemClickListener());
     }
 
@@ -189,30 +175,154 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
             // Highlight the selected item, update the title, and close the drawer
             // update selected item and title, then close the drawer
             mDrawerList.setItemChecked(position, true);
-            setTitle(".....");
+
+            setTitle(mMap.get(position).first);
             mDrawer.closeDrawer(mDrawerList);
         }
     }
 
     public void onDialogPositiveClick(DialogFragment dialog, String feed_url) throws Exception
     {
+        dialog.dismiss();
         if (feed_url.isEmpty())
             Toast.makeText(getApplicationContext(), "Error: can't add feed. Is the URL correct?", Toast.LENGTH_SHORT).show();
         else
+            new AddFeed().execute(feed_url);
+    }
+
+    /**
+     * Async task class to get json by making HTTP call
+     * */
+    private class GetPosts extends AsyncTask<Void, Void, String>
+    {
+        ArrayList<String> mFeedList = new ArrayList<String>();
+
+        @Override
+        protected void onPreExecute()
         {
-            System.out.println("URL = " + feed_url);
-            String feed_content = mWebService.addFeed("http://" + feed_url);
-            if (feed_content == "401" || feed_content == "404")
-                Toast.makeText(getApplicationContext(), "Error: can't add feed. Is the URL correct?", Toast.LENGTH_SHORT).show();
+            super.onPreExecute();
+            // Showing progress dialog
+            pDialog = new ProgressDialog(HomeActivity.this);
+            pDialog.setMessage("Please wait...");
+            pDialog.setCancelable(false);
+            pDialog.show();
+        }
+
+        @Override
+        protected String doInBackground(Void... arg0)
+        {
+            try {
+                if (mWebService.connectUser(mEmail, mPassword))
+                {
+                    String feeds = mWebService.getFeeds();
+                    JSONObject jsonObject = new JSONObject(feeds);
+                    JSONArray jArray = jsonObject.getJSONArray("feeds");
+                    for (int i = 0; i < jArray.length(); i++)
+                    {
+                        JSONObject row = jArray.getJSONObject(i);
+                        mMap.add(new Pair<String, Integer>(row.getString("title"), row.getInt("id")));
+                        mFeedList.add(row.getString("title"));
+                        String feed_content = mWebService.getFeedContent(row.getInt("id"));
+                        // Create and attach List View
+                        if (!feed_content.equals("401") && !feed_content.equals("404"))
+                        {
+                            JSONObject jO = new JSONObject(feed_content);
+                            JSONArray jA = jO.getJSONArray("posts");
+                            for (int j = 0; j < jA.length(); j++)
+                            {
+                                JSONObject r = jA.getJSONObject(j);
+                                String post_title = r.getString("title");
+                                // Attach edit view to List View
+                            }
+                        }
+                    }
+                    return "success";
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return "failed";
+        }
+
+        @Override
+        protected void onPostExecute(String result)
+        {
+            super.onPostExecute(result);
+            // Dismiss the progress dialog
+            if (pDialog.isShowing())
+                pDialog.dismiss();
+            if (result.equals("success"))
+                setFeedListAdapter(mFeedList);
+        }
+
+    }
+
+    private void setFeedListAdapter(ArrayList<String> feedList)
+    {
+        this.mItemsAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, feedList);
+        this.mDrawerList.setAdapter(this.mItemsAdapter);
+    }
+
+    private class AddFeed extends AsyncTask<String, Void, String>
+    {
+        String  mTitle;
+
+        @Override
+        protected void onPreExecute()
+        {
+            super.onPreExecute();
+            // Showing progress dialog
+            pDialog = new ProgressDialog(HomeActivity.this);
+            pDialog.setMessage("Please wait...");
+            pDialog.setCancelable(false);
+            pDialog.show();
+        }
+
+        @Override
+        protected String doInBackground(String... params)
+        {
+            String feed_content = null;
+            try
+            {
+                feed_content = mWebService.addFeed("http://" + params[0]);
+            } catch (Exception e) { e.printStackTrace();    }
+
+            if (feed_content.equals("401") || feed_content.equals("404"))
+                return "failed";
             else
             {
-                JSONObject jsonObject = new JSONObject(feed_content);
-                this.mMap.add(new Pair<String, Integer>(jsonObject.getString("title"), jsonObject.getInt("id")));
-                this.mItemsAdapter.add(jsonObject.getString("title"));
-                this.mItemsAdapter.notifyDataSetChanged();
+                JSONObject jsonObject = null;
+                try
+                {
+                    jsonObject = new JSONObject(feed_content);
+                    mMap.add(new Pair<String, Integer>(jsonObject.getString("title"), jsonObject.getInt("id")));
+                    mTitle = jsonObject.getString("title");
+                    return "success";
+                } catch (JSONException e) { e.printStackTrace();    }
+            }
+            return "failed";
+        }
+
+        @Override
+        protected void onPostExecute(String result)
+        {
+            super.onPostExecute(result);
+            // Dismiss the progress dialog
+            if (pDialog.isShowing())
+                pDialog.dismiss();
+            if (result.equals("success"))
+            {
+                updateFeedListAdapter(mTitle);
                 Toast.makeText(getApplicationContext(), "Feed added successfully", Toast.LENGTH_SHORT).show();
             }
+            else
+                Toast.makeText(getApplicationContext(), "Error: can't add feed. Is the URL correct?", Toast.LENGTH_SHORT).show();
         }
-        dialog.dismiss();
+    }
+
+    private void updateFeedListAdapter(String newFeed)
+    {
+        this.mItemsAdapter.add(newFeed);
+        this.mItemsAdapter.notifyDataSetChanged();
     }
 }
