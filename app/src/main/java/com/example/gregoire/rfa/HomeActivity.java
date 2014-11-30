@@ -3,6 +3,8 @@ package com.example.gregoire.rfa;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.DialogFragment;
+import android.app.Fragment;
+import android.app.FragmentManager;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -28,6 +30,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.List;
 
 
 public class HomeActivity extends Activity implements NoticeDialogFragment.NoticeDialogListener
@@ -44,6 +47,8 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
     private ProgressDialog          pDialog;
     private int                     mCurrentFeed = -1;
     private int                     mCurrentPosition = -1;
+    private List<Fragment>          mFragmentList;
+    static public List<ArrayList<String>> mPostsList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -86,6 +91,9 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
         this.mDrawer.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
         this.mData = new ArrayList<String>();
         this.mDrawerList = (ListView) findViewById(R.id.navigation_drawer);
+        this.mFragmentList = new ArrayList<Fragment>();
+        this.mPostsList = new ArrayList<ArrayList<String>>();
+
         setUpDrawerToggle();
         new GetPosts().execute();
 
@@ -191,18 +199,27 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
 
     private class DrawerItemClickListener implements ListView.OnItemClickListener
     {
-
         @Override
         public void onItemClick(AdapterView parent, View view, int position, long id)
         {
             // Highlight the selected item, update the title, and close the drawer
             // update selected item and title, then close the drawer
-            mDrawerList.setItemChecked(position, true);
-            mCurrentFeed = mMap.get(position).second;
-            mCurrentPosition = position;
-            setTitle(mMap.get(position).first);
-            mDrawer.closeDrawer(mDrawerList);
+            displayView(position);
         }
+    }
+
+    private void displayView(int position)
+    {
+            FragmentManager fragmentManager = getFragmentManager();
+            fragmentManager.beginTransaction().replace(R.id.frame_container, this.mFragmentList.get(position)).commit();
+
+            this.mCurrentFeed = this.mMap.get(position).second;
+            this.mCurrentPosition = position;
+            setTitle(this.mMap.get(position).first);
+
+            this.mDrawerList.setItemChecked(position, true);
+            this.mDrawerList.setSelection(position);
+            this.mDrawer.closeDrawer(this.mDrawerList);
     }
 
     private class GetPosts extends AsyncTask<Void, Void, String>
@@ -240,12 +257,15 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
                         {
                             JSONObject jO = new JSONObject(feed_content);
                             JSONArray jA = jO.getJSONArray("posts");
+                            ArrayList<String> postsList = new ArrayList<String>();
                             for (int j = 0; j < jA.length(); j++)
                             {
                                 JSONObject r = jA.getJSONObject(j);
-                                String post_title = r.getString("title");
-                                // Attach edit view to List View
+                                postsList.add(r.getString("title"));
                             }
+                            mPostsList.add(postsList);
+                            Fragment fragment = new HomeFragment();
+                            mFragmentList.add(fragment);
                         }
                     }
                     return "success";
