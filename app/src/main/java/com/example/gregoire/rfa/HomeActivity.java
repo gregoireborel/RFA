@@ -48,14 +48,13 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
     private int                     mCurrentFeed = -1;
     private int                     mCurrentPosition = -1;
     private List<Fragment>          mFragmentList;
-    static public List<ArrayList<String>> mPostsList;
+    static public List<ArrayList<String>> mPostsLists;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-
-       if (android.os.Build.VERSION.SDK_INT > 9)
+        if (android.os.Build.VERSION.SDK_INT > 9)
        {
             StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
             StrictMode.setThreadPolicy(policy);
@@ -89,10 +88,12 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
     {
         this.mDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         this.mDrawer.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
+        this.mDrawer.setScrimColor(getResources().getColor(android.R.color.transparent));
         this.mData = new ArrayList<String>();
         this.mDrawerList = (ListView) findViewById(R.id.navigation_drawer);
         this.mFragmentList = new ArrayList<Fragment>();
-        this.mPostsList = new ArrayList<ArrayList<String>>();
+        this.mPostsLists = new ArrayList<ArrayList<String>>();
+
 
         setUpDrawerToggle();
         new GetPosts().execute();
@@ -210,19 +211,18 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
 
     private void displayView(int position)
     {
-            FragmentManager fragmentManager = getFragmentManager();
-            fragmentManager.beginTransaction().replace(R.id.frame_container, this.mFragmentList.get(position)).commit();
+        getFragmentManager().beginTransaction().replace(R.id.frame_container, this.mFragmentList.get(position)).commit();
 
-            this.mCurrentFeed = this.mMap.get(position).second;
-            this.mCurrentPosition = position;
-            setTitle(this.mMap.get(position).first);
+        setTitle(this.mMap.get(position).first);
+        this.mCurrentFeed = this.mMap.get(position).second;
+        this.mCurrentPosition = position;
 
-            this.mDrawerList.setItemChecked(position, true);
-            this.mDrawerList.setSelection(position);
-            this.mDrawer.closeDrawer(this.mDrawerList);
+        this.mDrawerList.setItemChecked(position, true);
+        this.mDrawerList.setSelection(position);
+        this.mDrawer.closeDrawer(this.mDrawerList);
     }
 
-    private class GetPosts extends AsyncTask<Void, Void, String>
+    private class   GetPosts extends AsyncTask<Void, Void, String>
     {
         ArrayList<String> mFeedList = new ArrayList<String>();
 
@@ -251,11 +251,11 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
                         JSONObject row = jArray.getJSONObject(i);
                         mMap.add(new Pair<String, Integer>(row.getString("title"), row.getInt("id")));
                         mFeedList.add(row.getString("title"));
-                        String feed_content = mWebService.getFeedContent(row.getInt("id"));
+                        String feed_posts = mWebService.getFeedPosts(row.getInt("id"));
                         // Create and attach List View
-                        if (!feed_content.equals("401") && !feed_content.equals("404"))
+                        if (!feed_posts.equals("401") && !feed_posts.equals("404"))
                         {
-                            JSONObject jO = new JSONObject(feed_content);
+                            JSONObject jO = new JSONObject(feed_posts);
                             JSONArray jA = jO.getJSONArray("posts");
                             ArrayList<String> postsList = new ArrayList<String>();
                             for (int j = 0; j < jA.length(); j++)
@@ -263,8 +263,11 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
                                 JSONObject r = jA.getJSONObject(j);
                                 postsList.add(r.getString("title"));
                             }
-                            mPostsList.add(postsList);
+                            mPostsLists.add(postsList);
                             Fragment fragment = new HomeFragment();
+                            Bundle b = new Bundle();
+                            b.putInt("index", i);
+                            fragment.setArguments(b);
                             mFragmentList.add(fragment);
                         }
                     }
@@ -289,14 +292,14 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
 
     }
 
-    private void setFeedListAdapter(ArrayList<String> feedList)
+    private void    setFeedListAdapter(ArrayList<String> feedList)
     {
         this.mData = feedList;
         this.mItemsAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, this.mData);
         this.mDrawerList.setAdapter(this.mItemsAdapter);
     }
 
-    private class AddFeed extends AsyncTask<String, Void, String>
+    private class   AddFeed extends AsyncTask<String, Void, String>
     {
         String  mTitle;
 
@@ -314,24 +317,44 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
         @Override
         protected String doInBackground(String... params)
         {
-            String feed_content = null;
+            String json = null;
             try
             {
-                feed_content = mWebService.addFeed("http://" + params[0]);
+                json = mWebService.addFeed("http://" + params[0]);
             } catch (Exception e) { e.printStackTrace();    }
 
-            if (feed_content.equals("401") || feed_content.equals("404"))
+            if (json.equals("401") || json.equals("404"))
                 return "failed";
             else
             {
                 JSONObject jsonObject;
                 try
                 {
-                    jsonObject = new JSONObject(feed_content);
+                    jsonObject = new JSONObject(json);
                     mMap.add(new Pair<String, Integer>(jsonObject.getString("title"), jsonObject.getInt("id")));
                     mTitle = jsonObject.getString("title");
+
+                    String feed_content = mWebService.getFeedPosts(jsonObject.getInt("id"));
+                    if (!feed_content.equals("401") && !feed_content.equals("404"))
+                    {
+                        JSONObject jO = new JSONObject(feed_content);
+                        JSONArray jA = jO.getJSONArray("posts");
+                        ArrayList<String> postsList = new ArrayList<String>();
+                        for (int j = 0; j < jA.length(); j++)
+                        {
+                            JSONObject r = jA.getJSONObject(j);
+                            postsList.add(r.getString("title"));
+                        }
+                        mPostsLists.add(postsList);
+                        Fragment fragment = new HomeFragment();
+                        Bundle b = new Bundle();
+                        b.putInt("index", mPostsLists.indexOf(postsList));
+                        fragment.setArguments(b);
+                        mFragmentList.add(fragment);
+                    }
                     return "success";
                 } catch (JSONException e) { e.printStackTrace();    }
+                catch (Exception e) {   e.printStackTrace();    }
             }
             return "failed";
         }
@@ -353,13 +376,13 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
         }
     }
 
-    private void updateFeedListAdapter(String newFeed)
+    private void    updateFeedListAdapter(String newFeed)
     {
         this.mData.add(newFeed);
         this.mItemsAdapter.notifyDataSetChanged();
     }
 
-    private class DeleteFeed extends AsyncTask<Void, Void, String>
+    private class   DeleteFeed extends AsyncTask<Void, Void, String>
     {
         @Override
         protected void onPreExecute()
@@ -385,6 +408,9 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
                     {
                         mCurrentFeed = -1;
                         mMap.remove(mCurrentPosition);
+                        mPostsLists.remove(mCurrentPosition);
+                        mFragmentList.get(mCurrentPosition).onDestroy();
+                        mFragmentList.remove(mCurrentPosition);
                         return "success";
                     }
                 }

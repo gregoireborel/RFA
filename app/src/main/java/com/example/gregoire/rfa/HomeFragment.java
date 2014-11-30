@@ -1,7 +1,8 @@
 package com.example.gregoire.rfa;
 
+import android.app.Activity;
 import android.app.Fragment;
-import android.app.ListFragment;
+import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,21 +11,23 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class HomeFragment extends Fragment
 {
     ArrayAdapter    mAdapter;
+
     public HomeFragment(){}
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+                             Bundle savedInstanceState)
+    {
 
         View rootView = inflater.inflate(R.layout.fragment_home, container, false);
         ListView list = (ListView) rootView.findViewById(R.id.postListView);
-        ArrayList<String> postList = HomeActivity.mPostsList.get(HomeActivity.mPostsList.size() - 1);
-        this.mAdapter = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_list_item_1, android.R.id.text1, postList);
+
+        ArrayList<String> posts = HomeActivity.mPostsLists.get(getArguments().getInt("index"));
+        this.mAdapter = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_list_item_1, posts);
         list.setAdapter(this.mAdapter);
         return rootView;
     }

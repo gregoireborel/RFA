@@ -159,7 +159,7 @@ public class WebService
 		return json;
 	}
 	
-	public String getFeedContent(int id) throws Exception {
+	public String getFeedPosts(int id) throws Exception {
 		
 		String url = URL + FEED + Integer.toString(id);
 		String json = "";

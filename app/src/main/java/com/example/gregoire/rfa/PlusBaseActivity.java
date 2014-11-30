@@ -86,7 +86,8 @@ public abstract class PlusBaseActivity extends Activity
      */
     public void signIn()
     {
-        if (!mPlusClient.isConnected()) {
+        if (!mPlusClient.isConnected())
+        {
             // Show the dialog as we are now signing in.
             setProgressBarVisible(true);
             // Make sure that we will start the resolution (e.g. fire the intent and pop up a

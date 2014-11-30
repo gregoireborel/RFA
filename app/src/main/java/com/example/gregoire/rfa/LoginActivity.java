@@ -28,9 +28,6 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.SignInButton;
 
 import java.util.ArrayList;
@@ -57,8 +54,6 @@ public class LoginActivity extends PlusBaseActivity implements LoaderCallbacks<C
     private EditText            mPasswordView;
     private View                mProgressView;
     private View                mEmailLoginFormView;
-    private SignInButton        mPlusSignInButton;
-    private View                mSignOutButtons;
     private View                mLoginFormView;
     private SharedPreferences   mPrefs;
 
@@ -75,25 +70,6 @@ public class LoginActivity extends PlusBaseActivity implements LoaderCallbacks<C
             Intent i = new Intent(this, HomeActivity.class);
             startActivity(i);
             finish();
-        }
-
-        // Find the Google+ sign in button.
-        mPlusSignInButton = (SignInButton) findViewById(R.id.plus_sign_in_button);
-        if (supportsGooglePlayServices()) {
-            // Set a listener to connect the user when the G+ button is clicked.
-            mPlusSignInButton.setOnClickListener(new OnClickListener()
-            {
-                @Override
-                public void onClick(View view)
-                {
-                    signIn();
-                }
-            });
-        } else {
-            // Don't offer G+ sign in if the app's version is too low to support Google Play
-            // Services.
-            mPlusSignInButton.setVisibility(View.GONE);
-            return;
         }
 
         // Set up the login form.
@@ -127,7 +103,6 @@ public class LoginActivity extends PlusBaseActivity implements LoaderCallbacks<C
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
         mEmailLoginFormView = findViewById(R.id.email_login_form);
-        mSignOutButtons = findViewById(R.id.plus_sign_out_buttons);
     }
 
     public void signUp(View v)
@@ -257,30 +232,6 @@ public class LoginActivity extends PlusBaseActivity implements LoaderCallbacks<C
     }
 
     @Override
-    protected void onPlusClientSignIn()
-    {
-        //Set up sign out and disconnect buttons.
-        Button signOutButton = (Button) findViewById(R.id.plus_sign_out_button);
-        signOutButton.setOnClickListener(new OnClickListener()
-        {
-            @Override
-            public void onClick(View view)
-            {
-                signOut();
-            }
-        });
-        Button disconnectButton = (Button) findViewById(R.id.plus_disconnect_button);
-        disconnectButton.setOnClickListener(new OnClickListener()
-        {
-            @Override
-            public void onClick(View view)
-            {
-                revokeAccess();
-            }
-        });
-    }
-
-    @Override
     protected void onPlusClientBlockingUI(boolean show)
     {
         showProgress(show);
@@ -290,11 +241,6 @@ public class LoginActivity extends PlusBaseActivity implements LoaderCallbacks<C
     protected void updateConnectButtonState()
     {
         //TODO: Update this logic to also handle the user logged in by email.
-        boolean connected = getPlusClient().isConnected();
-
-        mSignOutButtons.setVisibility(connected ? View.VISIBLE : View.GONE);
-        mPlusSignInButton.setVisibility(connected ? View.GONE : View.VISIBLE);
-        mEmailLoginFormView.setVisibility(connected ? View.GONE : View.VISIBLE);
     }
 
     @Override
@@ -305,21 +251,15 @@ public class LoginActivity extends PlusBaseActivity implements LoaderCallbacks<C
     }
 
     @Override
-    protected void onPlusClientSignOut()
+    protected void onPlusClientSignIn()
     {
 
     }
 
-    /**
-     * Check if the device supports Google Play Services.  It's best
-     * practice to check first rather than handling this as an error case.
-     *
-     * @return whether the device supports Google Play Services
-     */
-    private boolean supportsGooglePlayServices()
+    @Override
+    protected void onPlusClientSignOut()
     {
-        return GooglePlayServicesUtil.isGooglePlayServicesAvailable(this) ==
-                ConnectionResult.SUCCESS;
+
     }
 
     @Override

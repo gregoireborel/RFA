@@ -91,7 +91,6 @@ public class RegisterActivity extends PlusBaseActivity implements LoaderManager.
         mLoginFormView = findViewById(R.id.register_form);
         mProgressView = findViewById(R.id.register_progress);
         mEmailSignUpFormView = findViewById(R.id.email_sign_up_form);
-        mSignOutButtons = findViewById(R.id.plus_sign_out_buttons);
     }
 
     public void signUp()
@@ -230,25 +229,6 @@ public class RegisterActivity extends PlusBaseActivity implements LoaderManager.
     @Override
     protected void onPlusClientSignIn()
     {
-        //Set up sign out and disconnect buttons.
-        Button signOutButton = (Button) findViewById(R.id.plus_sign_out_button);
-        signOutButton.setOnClickListener(new View.OnClickListener()
-        {
-            @Override
-            public void onClick(View view)
-            {
-                signOut();
-            }
-        });
-        Button disconnectButton = (Button) findViewById(R.id.plus_disconnect_button);
-        disconnectButton.setOnClickListener(new View.OnClickListener()
-        {
-            @Override
-            public void onClick(View view)
-            {
-                revokeAccess();
-            }
-        });
     }
 
     @Override
