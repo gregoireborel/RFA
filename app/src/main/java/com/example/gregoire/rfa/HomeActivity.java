@@ -94,7 +94,6 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
         this.mFragmentList = new ArrayList<Fragment>();
         this.mPostsLists = new ArrayList<ArrayList<String>>();
 
-
         setUpDrawerToggle();
         new GetPosts().execute();
 
@@ -261,7 +260,7 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
                             for (int j = 0; j < jA.length(); j++)
                             {
                                 JSONObject r = jA.getJSONObject(j);
-                                postsList.add(r.getString("title"));
+                                postsList.add("<a href=\"" + r.getString("link") + "\">" + r.getString("title") + "</a>");
                             }
                             mPostsLists.add(postsList);
                             Fragment fragment = new HomeFragment();
@@ -343,7 +342,7 @@ public class HomeActivity extends Activity implements NoticeDialogFragment.Notic
                         for (int j = 0; j < jA.length(); j++)
                         {
                             JSONObject r = jA.getJSONObject(j);
-                            postsList.add(r.getString("title"));
+                            postsList.add("<a href=\"" + r.getString("link") + "\">" + r.getString("title") + "</a>");
                         }
                         mPostsLists.add(postsList);
                         Fragment fragment = new HomeFragment();
